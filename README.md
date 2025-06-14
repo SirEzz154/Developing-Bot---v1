@@ -1,5 +1,4 @@
-git add .
-git commit -m "your message"
-git push
+git push origin main
+
 
 npm run dev
