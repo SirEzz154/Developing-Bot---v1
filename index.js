@@ -9,17 +9,38 @@ const client = new Client({
 
 client.commands = new Map();
 
-// Load commands from ./commands folder
-const commandFiles = fs.readdirSync(path.join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+// Load commands
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
+
 for (const file of commandFiles) {
-  const command = require(path.join(__dirname, 'commands', file));
+  const command = require(path.join(commandsPath, file));
   client.commands.set(command.name, command);
+}
+
+// Path to status JSON file
+const statusFile = path.join(__dirname, 'status.json');
+
+// Load and apply saved status on startup
+async function applySavedStatus() {
+  if (!fs.existsSync(statusFile)) return;
+
+  try {
+    const presenceData = JSON.parse(fs.readFileSync(statusFile, 'utf8'));
+    if (presenceData && presenceData.status) {
+      await client.user.setPresence(presenceData);
+      console.log('✅ Applied saved status on startup.');
+    }
+  } catch (err) {
+    console.error('❌ Failed to apply saved status:', err);
+  }
 }
 
 const prefix = '!';
 
-client.once('ready', () => {
+client.once('ready', async () => {
   console.log(`✅ Logged in as ${client.user.tag}!`);
+  await applySavedStatus();
 });
 
 client.on('messageCreate', async message => {
